@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<title>La Mente de Tu Mejor Amigo — Lore Books</title>
+<style>
+  :root{ --mirto:#14241B; --mirto-2:#1d3327; --pergamino:#F4EFE5; --tinta:#0E0E0C; --soft:#3A3833; --dorado:#C4883A; --dorado-2:#D6A05E; }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent}
+  html,body{margin:0;height:100%;overflow:hidden;background:#0d160f;color:var(--pergamino);
+    font-family:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif;}
+  /* ---------- GATE ---------- */
+  #gate{position:fixed;inset:0;z-index:50;display:flex;align-items:center;justify-content:center;padding:24px;
+    background:radial-gradient(120% 120% at 50% 0%, #1d3327 0%, #14241B 45%, #0d160f 100%);}
+  .card{width:100%;max-width:370px;background:var(--pergamino);color:var(--tinta);border-radius:12px;
+    padding:34px 30px 30px;box-shadow:0 24px 70px rgba(0,0,0,.5);text-align:center}
+  .wordmark{font-family:Inter,system-ui,sans-serif;font-size:11px;letter-spacing:.32em;font-weight:600;
+    color:var(--dorado);text-transform:uppercase;margin-bottom:18px}
+  .card h1{font-size:25px;line-height:1.18;font-style:italic;font-weight:500;color:var(--mirto);margin:0 0 6px;letter-spacing:-.01em}
+  .card .sub{font-size:13px;color:var(--soft);margin:0 0 22px}
+  .field{display:flex;gap:8px}
+  input[type=password]{flex:1;width:100%;padding:12px 14px;border:1px solid rgba(20,36,27,.28);border-radius:8px;
+    font-family:inherit;font-size:16px;color:var(--tinta);background:#fff;outline:none}
+  input[type=password]:focus{border-color:var(--dorado)}
+  button.open{margin-top:14px;width:100%;padding:12px 16px;border:0;border-radius:8px;cursor:pointer;
+    background:var(--dorado);color:#19130b;font-family:Inter,system-ui,sans-serif;font-weight:600;font-size:15px;letter-spacing:.01em;transition:background .15s}
+  button.open:hover{background:var(--dorado-2)}
+  button.open:disabled{opacity:.6;cursor:default}
+  .err{min-height:16px;margin-top:12px;font-size:13px;color:#b5462f;font-style:italic}
+  .bar{height:4px;border-radius:3px;background:rgba(20,36,27,.14);margin-top:16px;overflow:hidden;display:none}
+  .bar>i{display:block;height:100%;width:0;background:var(--dorado);transition:width .15s}
+  .foot{margin-top:18px;font-size:11px;color:var(--soft);font-family:Inter,system-ui,sans-serif;letter-spacing:.04em}
+  /* ---------- READER ---------- */
+  #reader{position:fixed;inset:0;display:none;flex-direction:column}
+  .topbar{flex:0 0 auto;display:flex;align-items:center;justify-content:space-between;
+    padding:10px 16px;font-family:Inter,system-ui,sans-serif;font-size:11px;letter-spacing:.16em;
+    text-transform:uppercase;color:rgba(244,239,229,.62)}
+  .topbar .mk{color:var(--dorado);font-weight:600}
+  #stage{flex:1 1 auto;position:relative;display:flex;align-items:center;justify-content:center;padding:6px 8px 2px;min-height:0}
+  #book{margin:0 auto}
+  /* StPageFlip page background while images settle */
+  #book .stf__item{background:var(--pergamino)}
+  .controls{flex:0 0 auto;display:flex;align-items:center;justify-content:center;gap:10px;padding:10px 12px 16px;
+    font-family:Inter,system-ui,sans-serif}
+  .controls button{appearance:none;border:1px solid rgba(244,239,229,.22);background:rgba(244,239,229,.05);
+    color:var(--pergamino);width:46px;height:38px;border-radius:9px;font-size:17px;cursor:pointer;transition:.15s;line-height:1}
+  .controls button:hover{border-color:var(--dorado);color:var(--dorado)}
+  .controls .count{min-width:96px;text-align:center;font-size:12px;letter-spacing:.08em;color:rgba(244,239,229,.7)}
+  .controls .fs{font-size:14px}
+  .hint{position:absolute;bottom:8px;left:50%;transform:translateX(-50%);font-family:Inter,system-ui,sans-serif;
+    font-size:11px;letter-spacing:.08em;color:rgba(244,239,229,.5);pointer-events:none;transition:opacity .6s}
+  @media (max-width:560px){ .topbar{font-size:10px;padding:8px 12px} .controls button{width:42px;height:36px} }
+</style>
+</head>
+<body>
+
+<div id="gate">
+  <div class="card">
+    <div class="wordmark">LORE BOOKS · N°001</div>
+    <h1>La Mente de Tu Mejor Amigo</h1>
+    <p class="sub">Vista privada · ejemplar de lectura</p>
+    <form id="form" autocomplete="off">
+      <div class="field">
+        <input id="pw" type="password" placeholder="Contraseña" autocomplete="off" autofocus>
+      </div>
+      <button class="open" id="btn" type="submit">Abrir libro</button>
+    </form>
+    <div class="err" id="err"></div>
+    <div class="bar" id="bar"><i id="fill"></i></div>
+    <div class="foot">Psicología canina basada en evidencia · 90 páginas</div>
+  </div>
+</div>
+
+<div id="reader">
+  <div class="topbar">
+    <span><span class="mk">LORE BOOKS</span> · La Mente de Tu Mejor Amigo</span>
+    <span id="ind">—</span>
+  </div>
+  <div id="stage">
+    <div id="book"></div>
+    <div class="hint" id="hint">Desliza, toca las esquinas o usa ← →</div>
+  </div>
+  <div class="controls">
+    <button id="prev" aria-label="Anterior">‹</button>
+    <span class="count" id="count">— / —</span>
+    <button id="next" aria-label="Siguiente">›</button>
+    <button id="fs" class="fs" aria-label="Pantalla completa">⛶</button>
+  </div>
+</div>
+
+<script src="page-flip.browser.js"></script>
+<script>
+(function(){
+  "use strict";
+  var $ = function(id){ return document.getElementById(id); };
+  var manifest=null, key=null, pf=null, urls=[];
+
+  function buf2u8(b){ return new Uint8Array(b); }
+  function b64ToU8(s){ var bin=atob(s), u=new Uint8Array(bin.length); for(var i=0;i<bin.length;i++)u[i]=bin.charCodeAt(i); return u; }
+
+  async function deriveKey(pw){
+    var enc=new TextEncoder();
+    var base=await crypto.subtle.importKey("raw", enc.encode(pw), {name:"PBKDF2"}, false, ["deriveKey"]);
+    return crypto.subtle.deriveKey(
+      {name:"PBKDF2", salt:b64ToU8(manifest.salt), iterations:manifest.iter, hash:manifest.hash},
+      base, {name:"AES-GCM", length:256}, false, ["decrypt"]);
+  }
+  async function fetchEnc(name){
+    var r=await fetch("enc/"+name+".enc", {cache:"force-cache"});
+    if(!r.ok) throw new Error("fetch "+name);
+    return await r.arrayBuffer();
+  }
+  async function decrypt(k, ab){
+    var u=buf2u8(ab), iv=u.slice(0,12), ct=u.slice(12);
+    var pt=await crypto.subtle.decrypt({name:"AES-GCM", iv:iv}, k, ct);
+    return URL.createObjectURL(new Blob([pt], {type:"image/webp"}));
+  }
+
+  async function unlock(pw){
+    $("err").textContent=""; $("btn").disabled=true;
+    try{
+      key=await deriveKey(pw);
+      // validar con la primera pagina
+      var first=await fetchEnc(manifest.pages[0]);
+      var firstUrl;
+      try{ firstUrl=await decrypt(key, first); }
+      catch(e){ throw {bad:true}; }
+      // contraseña correcta -> descifrar todo con progreso
+      $("bar").style.display="block";
+      urls=new Array(manifest.count); urls[0]=firstUrl;
+      var bufs=await Promise.all(manifest.pages.map(function(n,i){ return i===0?Promise.resolve(first):fetchEnc(n); }));
+      var done=1; $("fill").style.width=Math.round(done/manifest.count*100)+"%";
+      for(var i=1;i<manifest.count;i++){
+        urls[i]=await decrypt(key, bufs[i]);
+        done++; $("fill").style.width=Math.round(done/manifest.count*100)+"%";
+      }
+      startBook();
+    }catch(e){
+      $("btn").disabled=false; $("bar").style.display="none"; $("fill").style.width="0";
+      $("err").textContent = e&&e.bad ? "Contraseña incorrecta." : "No se pudo abrir. Reintenta.";
+    }
+  }
+
+  var RATIO=2565/1710; // alto/ancho de cada pagina
+  function dims(){
+    var aw=window.innerWidth-16, ah=window.innerHeight-104; // descuenta barra sup. + controles
+    var spread=window.innerWidth>=800;
+    var pw = spread ? Math.min(aw/2, ah/RATIO) : Math.min(aw, ah/RATIO);
+    return {w:Math.max(240,Math.floor(pw)), h:Math.max(360,Math.floor(pw*RATIO)), spread:spread};
+  }
+  function startBook(){
+    $("gate").style.display="none";
+    $("reader").style.display="flex";
+    var total=manifest.count;
+    function upd(p){ var n=(p|0)+1; $("count").textContent=n+" / "+total; $("ind").textContent=n+" / "+total; }
+    function build(toPage){
+      var d=dims(), el=$("book");
+      el.style.width=(d.spread?d.w*2:d.w)+"px"; el.style.height=d.h+"px";
+      if(pf){ try{pf.destroy();}catch(e){} el.replaceChildren(); }
+      pf=new St.PageFlip(el, {
+        width:d.w, height:d.h, size:"fixed", usePortrait:true, showCover:true,
+        drawShadow:true, maxShadowOpacity:0.5, flippingTime:680, swipeDistance:24,
+        mobileScrollSupport:false, clickEventForward:true, useMouseEvents:true, showPageCorners:true
+      });
+      pf.loadFromImages(urls);
+      pf.on("flip", function(e){ upd(e.data); });
+      if(toPage){ setTimeout(function(){ try{ pf.turnToPage(toPage,false); }catch(e){} }, 60); }
+    }
+    build(); upd(0);
+    $("prev").onclick=function(){ if(pf) pf.flipPrev(); };
+    $("next").onclick=function(){ if(pf) pf.flipNext(); };
+    document.addEventListener("keydown", function(e){
+      if(!pf) return;
+      if(e.key==="ArrowLeft") pf.flipPrev();
+      else if(e.key==="ArrowRight") pf.flipNext();
+    });
+    $("fs").onclick=function(){
+      if(!document.fullscreenElement){ (document.documentElement.requestFullscreen||function(){return Promise.resolve();})().catch(function(){}); }
+      else if(document.exitFullscreen){ document.exitFullscreen(); }
+    };
+    var hint=$("hint"); setTimeout(function(){ hint.style.opacity="0"; }, 4200);
+    var rt; window.addEventListener("resize", function(){ clearTimeout(rt); rt=setTimeout(function(){
+      build(pf?pf.getCurrentPageIndex():0); }, 250); });
+  }
+
+  // init
+  fetch("manifest.json").then(function(r){return r.json();}).then(function(m){
+    manifest=m;
+    $("form").addEventListener("submit", function(e){ e.preventDefault(); var v=$("pw").value.trim(); if(v) unlock(v); });
+    // enlace de cortesía: #k=clave -> auto-abre (compartir de confianza)
+    var h=location.hash.match(/k=([^&]+)/);
+    if(h){ var pw=decodeURIComponent(h[1]); $("pw").value=pw; unlock(pw); }
+  }).catch(function(){ $("err").textContent="No se pudo cargar el libro."; });
+})();
+</script>
+</body>
+</html>
