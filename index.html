@@ -106,14 +106,8 @@
       {name:"PBKDF2", salt:b64ToU8(manifest.salt), iterations:manifest.iter, hash:manifest.hash},
       base, {name:"AES-GCM", length:256}, false, ["decrypt"]);
   }
-  async function fetchEnc(name){
-    var r=await fetch("enc/"+name+".enc");
-    if(!r.ok) throw new Error("fetch "+name+" -> "+r.status);
-    return await r.arrayBuffer();
-  }
-  async function decrypt(k, ab){
-    var u=buf2u8(ab), iv=u.slice(0,12), ct=u.slice(12);
-    var pt=await crypto.subtle.decrypt({name:"AES-GCM", iv:iv}, k, ct);
+  async function decryptSeg(k, u8){
+    var pt=await crypto.subtle.decrypt({name:"AES-GCM", iv:u8.subarray(0,12)}, k, u8.subarray(12));
     return URL.createObjectURL(new Blob([pt], {type:"image/webp"}));
   }
 
@@ -122,21 +116,28 @@
     $("bar").style.display="block"; $("fill").style.width="0";
     try{
       key=await deriveKey(pw);
-      // validar la contraseña con la primera pagina
+      // UNA sola descarga del paquete cifrado (robusto en frio/movil/CDN), con progreso real
+      var resp=await fetch(manifest.bundle||"book.bin");
+      if(!resp.ok) throw new Error("bundle "+resp.status);
+      var total=+resp.headers.get("Content-Length")||0, rec=0, chunks=[];
+      if(resp.body && resp.body.getReader){
+        var rd=resp.body.getReader();
+        while(true){ var part=await rd.read(); if(part.done) break;
+          chunks.push(part.value); rec+=part.value.length;
+          if(total) $("fill").style.width=Math.round(rec/total*72)+"%"; }
+      } else { var ab=await resp.arrayBuffer(); chunks.push(new Uint8Array(ab)); rec=ab.byteLength; }
+      var buf=new Uint8Array(rec), off=0;
+      for(var c=0;c<chunks.length;c++){ buf.set(chunks[c], off); off+=chunks[c].length; }
+      $("fill").style.width="74%";
+      // parsear [len uint32 BE][iv+ct] x count y descifrar cada pagina
+      var dv=new DataView(buf.buffer, buf.byteOffset, buf.byteLength), pos=0;
       urls=new Array(manifest.count);
-      var firstBuf=await fetchEnc(manifest.pages[0]);
-      try{ urls[0]=await decrypt(key, firstBuf); }
-      catch(e){ throw {bad:true}; }
-      var done=1; $("fill").style.width=Math.round(done/manifest.count*100)+"%";
-      // descargar el resto en lotes pequeños + descifrar (robusto en frio/movil)
-      var BATCH=8;
-      for(var i=1;i<manifest.count;i+=BATCH){
-        var slice=manifest.pages.slice(i, i+BATCH);
-        var bufs=await Promise.all(slice.map(function(n){ return fetchEnc(n); }));
-        for(var j=0;j<bufs.length;j++){
-          urls[i+j]=await decrypt(key, bufs[j]);
-          done++; $("fill").style.width=Math.round(done/manifest.count*100)+"%";
-        }
+      for(var i=0;i<manifest.count;i++){
+        var len=dv.getUint32(pos); pos+=4;
+        var seg=buf.subarray(pos, pos+len); pos+=len;
+        try{ urls[i]=await decryptSeg(key, seg); }
+        catch(e){ if(i===0) throw {bad:true}; throw e; }
+        $("fill").style.width=(74+Math.round((i+1)/manifest.count*26))+"%";
       }
       startBook();
     }catch(e){
