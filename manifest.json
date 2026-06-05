@@ -1,1 +1,1 @@
-{"v": 1, "alg": "AES-GCM", "kdf": "PBKDF2-SHA256", "hash": "SHA-256", "iter": 150000, "salt": "jwfVNv03QReW5WKFdlKt9A==", "count": 90, "w": 1710, "h": 2565, "title": "La Mente de Tu Mejor Amigo", "bundle": "book.bin"}
+{"v": 1, "alg": "AES-GCM", "kdf": "PBKDF2-SHA256", "hash": "SHA-256", "iter": 150000, "salt": "Ni1VJyAS4hbL3uEESHZIYg==", "count": 90, "w": 1710, "h": 2565, "bundle": "book.bin", "title": "La Mente de Tu Mejor Amigo"}

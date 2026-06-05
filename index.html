@@ -39,8 +39,10 @@
   .topbar .mk{color:var(--dorado);font-weight:600}
   #stage{flex:1 1 auto;position:relative;display:flex;align-items:center;justify-content:center;padding:6px 8px 2px;min-height:0}
   #book{margin:0 auto}
-  /* StPageFlip page background while images settle */
-  #book .stf__item{background:var(--pergamino)}
+  /* Modo HTML: imagenes a DPR completo (nitidas) + contrapagina transparente */
+  #book .page{background:transparent}
+  #book .page img{width:100%;height:100%;display:block;-webkit-user-drag:none;user-select:none}
+  #book .stf__item{background:transparent}
   .controls{flex:0 0 auto;display:flex;align-items:center;justify-content:center;gap:10px;padding:10px 12px 16px;
     font-family:Inter,system-ui,sans-serif}
   .controls button{appearance:none;border:1px solid rgba(244,239,229,.22);background:rgba(244,239,229,.05);
@@ -162,12 +164,18 @@
       var d=dims(), el=$("book");
       el.style.width=(d.spread?d.w*2:d.w)+"px"; el.style.height=d.h+"px";
       if(pf){ try{pf.destroy();}catch(e){} el.replaceChildren(); }
+      // paginas HTML con <img> reales (nitidez retina); lazy = memoria segura en movil
+      for(var k=0;k<urls.length;k++){
+        var pg=document.createElement("div"); pg.className="page";
+        var im=document.createElement("img"); im.loading="lazy"; im.decoding="async"; im.src=urls[k];
+        pg.appendChild(im); el.appendChild(pg);
+      }
       pf=new St.PageFlip(el, {
         width:d.w, height:d.h, size:"fixed", usePortrait:true, showCover:true,
         drawShadow:true, maxShadowOpacity:0.5, flippingTime:680, swipeDistance:24,
         mobileScrollSupport:false, clickEventForward:true, useMouseEvents:true, showPageCorners:true
       });
-      pf.loadFromImages(urls);
+      pf.loadFromHTML(el.querySelectorAll(".page"));
       pf.on("flip", function(e){ upd(e.data); });
       if(toPage){ setTimeout(function(){ try{ pf.turnToPage(toPage,false); }catch(e){} }, 60); }
     }
