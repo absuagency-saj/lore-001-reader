@@ -107,8 +107,8 @@
       base, {name:"AES-GCM", length:256}, false, ["decrypt"]);
   }
   async function fetchEnc(name){
-    var r=await fetch("enc/"+name+".enc", {cache:"force-cache"});
-    if(!r.ok) throw new Error("fetch "+name);
+    var r=await fetch("enc/"+name+".enc");
+    if(!r.ok) throw new Error("fetch "+name+" -> "+r.status);
     return await r.arrayBuffer();
   }
   async function decrypt(k, ab){
@@ -119,21 +119,24 @@
 
   async function unlock(pw){
     $("err").textContent=""; $("btn").disabled=true;
+    $("bar").style.display="block"; $("fill").style.width="0";
     try{
       key=await deriveKey(pw);
-      // validar con la primera pagina
-      var first=await fetchEnc(manifest.pages[0]);
-      var firstUrl;
-      try{ firstUrl=await decrypt(key, first); }
+      // validar la contraseña con la primera pagina
+      urls=new Array(manifest.count);
+      var firstBuf=await fetchEnc(manifest.pages[0]);
+      try{ urls[0]=await decrypt(key, firstBuf); }
       catch(e){ throw {bad:true}; }
-      // contraseña correcta -> descifrar todo con progreso
-      $("bar").style.display="block";
-      urls=new Array(manifest.count); urls[0]=firstUrl;
-      var bufs=await Promise.all(manifest.pages.map(function(n,i){ return i===0?Promise.resolve(first):fetchEnc(n); }));
       var done=1; $("fill").style.width=Math.round(done/manifest.count*100)+"%";
-      for(var i=1;i<manifest.count;i++){
-        urls[i]=await decrypt(key, bufs[i]);
-        done++; $("fill").style.width=Math.round(done/manifest.count*100)+"%";
+      // descargar el resto en lotes pequeños + descifrar (robusto en frio/movil)
+      var BATCH=8;
+      for(var i=1;i<manifest.count;i+=BATCH){
+        var slice=manifest.pages.slice(i, i+BATCH);
+        var bufs=await Promise.all(slice.map(function(n){ return fetchEnc(n); }));
+        for(var j=0;j<bufs.length;j++){
+          urls[i+j]=await decrypt(key, bufs[j]);
+          done++; $("fill").style.width=Math.round(done/manifest.count*100)+"%";
+        }
       }
       startBook();
     }catch(e){
